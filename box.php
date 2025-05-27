@@ -1,135 +1,178 @@
-<div id="sensorDataContainer">
-    <p class="text-muted">Loading sensor data...</p>
-</div>
-
-<div class="text-end mb-4">
-    <small>Refreshing in <span id="countdown">15</span> seconds...</small>
-</div>
-
+<?php
+$boxIds = [
+  '6432c58260cfd90007a3a792',
+  '58f71187e617ed0011e5bdee' // Remaining boxes only
+];
+?>
+<div id="senseBoxContent"></div>
+ 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+ 
+<style>
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+ 
+  .chart-card {
+    background: white;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+  }
+ 
+  .chart-card h4 {
+    margin: 0;
+    font-size: 14px;
+  }
+ 
+  .chart-card p {
+    margin: 4px 0;
+    font-size: 12px;
+  }
+ 
+  .chart-container {
+    height: 100px;
+    position: relative;
+    margin-top: 8px;
+  }
+ 
+  .map-container {
+    height: 250px;
+    margin-top: 10px;
+  }
+ 
+  #countdown {
+    text-align: right;
+    margin: 5px 0 10px;
+    color: #555;
+    font-size: 13px;
+    font-style: italic;
+  }
+</style>
+ 
+<div id="countdown">Refreshing in <span id="timer">15</span> seconds...</div>
+ 
 <script>
-let countdown = 15;
-let countdownInterval;
-let map = null;
-let marker = null;
-let charts = [];
-
-function startCountdown() {
-    clearInterval(countdownInterval);
-    countdown = 15;
-    document.getElementById('countdown').textContent = countdown;
-    countdownInterval = setInterval(() => {
-        countdown--;
-        document.getElementById('countdown').textContent = countdown;
-        if (countdown <= 0) {
-            clearInterval(countdownInterval);
-            loadSensorData();
-        }
-    }, 1000);
-}
-
-function destroyCharts() {
-    charts.forEach(chart => chart.destroy());
-    charts = [];
-}
-
-function loadSensorData() {
-    const container = document.getElementById('sensorDataContainer');
-    container.innerHTML = '<p class="text-muted">Fetching latest data...</p>';
-
-    const params = new URLSearchParams(window.location.search);
-    const location = params.get('location') || 'brunei';
-
-    fetch(`box_data.php?location=${location}`)
-        .then(response => response.json())
-        .then(data => {
-            container.innerHTML = '';
-            destroyCharts();
-
-            const { name, exposure, model, currentLocation, sensors } = data;
-            const [lon, lat] = currentLocation.coordinates;
-
-            const infoHtml = `
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h2>${name}</h2>
-                        <p>Exposure: ${exposure} | Model: ${model}</p>
-                        <p>Coordinates: Lat = ${lat}, Lon = ${lon}</p>
-                    </div>
-                </div>
-                <div id="map" style="height: 400px;" class="mb-4"></div>
-                <h3 class="mb-3">Sensors</h3>
-                <div class="row" id="sensorCards"></div>
-            `;
-            container.innerHTML = infoHtml;
-
-            if (!map) {
-                map = L.map('map').setView([lat, lon], 16);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-                marker = L.marker([lat, lon]).addTo(map).bindPopup(name).openPopup();
-            } else {
-                map.setView([lat, lon]);
-                marker.setLatLng([lat, lon]).bindPopup(name).openPopup();
-            }
-
-            const sensorCards = document.getElementById('sensorCards');
-
-            sensors.forEach((sensor, index) => {
-                const val = sensor.lastMeasurement?.value ?? 'N/A';
-                const time = sensor.lastMeasurement?.createdAt ?? 'N/A';
-                const chartId = `chart${index}`;
-
-                const card = document.createElement('div');
-                card.className = 'col-md-6 mb-4';
-                card.innerHTML = `
-                    <div class="card">
-                        <div class="card-body">
-                            <h5>${sensor.title}</h5>
-                            <p>Last: ${val} ${sensor.unit}</p>
-                            <p><small>${time}</small></p>
-                            <canvas id="${chartId}" height="200"></canvas>
-                        </div>
-                    </div>
-                `;
-                sensorCards.appendChild(card);
-
-                if (!isNaN(val)) {
-                    const ctx = document.getElementById(chartId).getContext('2d');
-                    const chart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Latest'],
-                            datasets: [{
-                                label: sensor.title,
-                                data: [parseFloat(val)],
-                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }
-                    });
-                    charts.push(chart);
-                }
+const boxIds = <?php echo json_encode($boxIds); ?>;
+ 
+function loadAllBoxes() {
+  const container = document.getElementById("senseBoxContent");
+  container.innerHTML = "";
+ 
+  boxIds.forEach((boxId, boxIndex) => {
+    fetch(`https://api.opensensemap.org/boxes/${boxId}`)
+      .then(res => res.json())
+      .then(data => {
+        const boxName = data.name;
+        const exposure = data.exposure;
+        const coords = data.loc[0]?.geometry?.coordinates || [];
+        const lat = coords[1];
+        const lng = coords[0];
+ 
+        // Info card
+        const info = document.createElement("div");
+        info.className = "chart-card";
+        info.innerHTML = `
+          <h4>${boxName}</h4>
+          <p><strong>Exposure:</strong> ${exposure}</p>
+          ${lat && lng ? `<p>Lat: ${lat} | Lng: ${lng}</p>` : ""}
+        `;
+        container.appendChild(info);
+ 
+        // Charts
+        const grid = document.createElement("div");
+        grid.className = "chart-grid";
+ 
+        let chartCount = 0;
+        data.sensors.forEach(sensor => {
+          if (!sensor.lastMeasurement) return;
+ 
+          const title = sensor.title;
+          const unit = sensor.unit;
+          const value = sensor.lastMeasurement.value;
+          const chartId = `chart_${boxIndex}_${chartCount}`;
+ 
+          const card = document.createElement("div");
+          card.className = "chart-card";
+          card.innerHTML = `
+            <h4>${title}</h4>
+            <p><strong>${value}</strong> ${unit}</p>
+            <div class="chart-container"><canvas id="${chartId}"></canvas></div>
+          `;
+          grid.appendChild(card);
+ 
+          setTimeout(() => {
+            new Chart(document.getElementById(chartId).getContext("2d"), {
+              type: "bar",
+              data: {
+                labels: [""],
+                datasets: [{
+                  label: title,
+                  data: [value],
+                  backgroundColor: "rgba(54, 162, 235, 0.6)",
+                  borderColor: "rgba(54, 162, 235, 1)",
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+              }
             });
-
-            startCountdown();
-        })
-        .catch(err => {
-            container.innerHTML = `<div class="alert alert-danger">Error loading data: ${err}</div>`;
-            console.error(err);
-            startCountdown();
+          }, 100);
+ 
+          chartCount++;
         });
+ 
+        container.appendChild(grid);
+ 
+        // Map
+        if (lat && lng) {
+          const mapContainerId = `map_${boxIndex}`;
+          const mapCard = document.createElement("div");
+          mapCard.className = "chart-card";
+          mapCard.innerHTML = `<h4>Map Location</h4><div id="${mapContainerId}" class="map-container"></div>`;
+          container.appendChild(mapCard);
+ 
+          setTimeout(() => {
+            const map = L.map(mapContainerId).setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([lat, lng]).addTo(map).bindPopup(boxName).openPopup();
+          }, 100);
+        }
+      });
+  });
 }
-
-// Initial load
-loadSensorData();
+ 
+// Countdown & auto-refresh
+let countdown = 15;
+const timerEl = document.getElementById("timer");
+ 
+function startCountdown() {
+  setInterval(() => {
+    countdown--;
+    timerEl.textContent = countdown;
+    if (countdown === 0) {
+      countdown = 15;
+      loadAllBoxes();
+    }
+  }, 1000);
+}
+ 
+loadAllBoxes();
+startCountdown();
 </script>
+ 
+ 

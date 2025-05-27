@@ -1,26 +1,37 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="index.php">IoT Dashboard</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="countryDropdown" role="button" data-bs-toggle="dropdown">
-                        Locations
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="index.php?location=brunei">Brunei</a></li>
-                        <li><a class="dropdown-item" href="index.php?location=london">London</a></li>
-                        <!-- Add more as needed -->
-                    </ul>
-                </li>
-            </ul>
-            <span class="navbar-text text-white">
-                Real-time Sensor Monitoring
-            </span>
-        </div>
-    </div>
-</nav>
+
+<!-- menu.php -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenSenseMap Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
+    .menu { background-color: #007BFF; color: white; padding: 15px; }
+    .container { padding: 20px; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .card h4 { margin-top: 0; }
+    canvas { width: 100% !important; height: 300px !important; }
+    #countdown {
+      text-align: right;
+      margin-bottom: 10px;
+      color: #555;
+      font-style: italic;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div class="menu">
+    <h2>OpenSenseMap Dashboard</h2>
+  </div>
+  <div class="container">
+ 
+ 
