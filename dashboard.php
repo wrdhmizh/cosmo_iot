@@ -1,5 +1,7 @@
 <?php
 session_start();
+
+// Redirect to login page if not logged in
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit();
@@ -9,6 +11,7 @@ if (!isset($_SESSION['user'])) {
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Dashboard</title>
 </head>
 <body>
