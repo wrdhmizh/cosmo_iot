@@ -2,12 +2,12 @@
 require_once 'config.php'; // Connect to DB
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
+    $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    if ($email && $password) {
-        $stmt = $pdo->prepare("SELECT * FROM public.users WHERE email = :email LIMIT 1");
-        $stmt->execute([':email' => $email]);
+    if ($username && $password) {
+        $stmt = $pdo->prepare("SELECT * FROM public.users WHERE username = :username LIMIT 1");
+        $stmt->execute([':username' => $username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: dashboard.php");
             exit;
         } else {
-            $error = "Invalid email or password.";
+            $error = "Invalid username or password.";
         }
     }
 }
@@ -29,19 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Login</title>
     <style>
-        body {
+        html, body {
             min-height: 100vh;
-            background: linear-gradient(120deg, #e9f8ef 0%, #d7f6e8 100%);
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: url('pic.jpeg') no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
         }
         .login-card {
-            background: #fff;
+            background: rgba(255,255,255,0.90);
             padding: 2.5rem 2rem 2rem 2rem;
             border-radius: 18px;
-            box-shadow: 0 8px 32px 0 rgba(44, 113, 88, 0.09);
+            box-shadow: 0 8px 32px 0 rgba(44, 113, 88, 0.13);
             max-width: 350px;
             width: 100%;
             display: flex;
@@ -56,8 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 700;
             letter-spacing: 1px;
         }
-        .login-card input[type="email"],
-        .login-card input[type="password"] {
+        .login-card input[type="text"] {
             width: 100%;
             padding: 0.7rem 1rem;
             margin-bottom: 1.2rem;
@@ -68,9 +75,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: border 0.2s;
             outline: none;
         }
-        .login-card input[type="email"]:focus,
-        .login-card input[type="password"]:focus {
+        .login-card input[type="text"]:focus {
             border-color: #60c993;
+        }
+        /* Password wrapper and eye icon for alignment */
+        .password-wrapper {
+            width: 100%;
+            position: relative;
+            margin-bottom: 1.2rem;
+        }
+        .password-wrapper input[type="password"] {
+            width: 100%;
+            padding: 0.7rem 2.8rem 0.7rem 1rem;
+            border: 1.2px solid #c2ebd7;
+            border-radius: 8px;
+            background: #e6f8ee;
+            font-size: 1rem;
+            transition: border 0.2s;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .password-wrapper input[type="password"]:focus {
+            border-color: #60c993;
+        }
+        .eye-icon {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            fill: #5ec699;
+            opacity: 0.8;
+            transition: fill 0.18s, opacity 0.18s;
+        }
+        .eye-icon:hover {
+            opacity: 1;
+            fill: #26845d;
         }
         .login-card button {
             width: 100%;
@@ -122,12 +164,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if (!empty($error)): ?>
             <div class="error-msg"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-        <input type="email" name="email" placeholder="Email" required autocomplete="username">
-        <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+        <input type="text" name="username" placeholder="Username" required autocomplete="username">
+        <div class="password-wrapper">
+            <input type="password" name="password" id="passwordInput" placeholder="Password" required autocomplete="current-password">
+            <!-- Eye icon SVG -->
+            <svg class="eye-icon" id="togglePassword" viewBox="0 0 24 24">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zm11 5c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm0-10a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+        </div>
         <button type="submit">Sign In</button>
         <div class="bottom-link">
             Don't have an account? <a href="signup.php">Sign Up</a>
         </div>
     </form>
+    <script>
+        // Show/hide password logic
+        const passwordInput = document.getElementById('passwordInput');
+        const togglePassword = document.getElementById('togglePassword');
+        let passwordVisible = false;
+
+        togglePassword.addEventListener('click', function () {
+            passwordVisible = !passwordVisible;
+            if (passwordVisible) {
+                passwordInput.type = 'text';
+                togglePassword.style.fill = '#26845d';
+            } else {
+                passwordInput.type = 'password';
+                togglePassword.style.fill = '#5ec699';
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,34 +1,45 @@
 <?php
 session_start();
+require_once 'config.php'; // Connect to DB
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
+    $signup_token = trim($_POST['signup_token'] ?? '');
 
-    if ($username === '' || $password === '') {
+    if ($username === '' || $password === '' || $signup_token === '') {
         echo "<script>alert('Please fill in all fields.'); window.location.href='signup.php';</script>";
         exit();
     }
 
-    $userFile = 'users.txt';
+    // Check token in database (must be valid and not used)
+    $stmt = $pdo->prepare("SELECT * FROM public.signup_tokens WHERE token = :token AND is_used = FALSE LIMIT 1");
+    $stmt->execute([':token' => $signup_token]);
+    $token_row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Check if user already exists
-    if (file_exists($userFile)) {
-        $users = file($userFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($users as $user) {
-            list($existingUser, ) = explode(':', $user);
-            if ($username === $existingUser) {
-                echo "<script>alert('Username already exists.'); window.location.href='signup.php';</script>";
-                exit();
-            }
-        }
+    if (!$token_row) {
+        echo "<script>alert('Invalid or already used signup token!'); window.location.href='signup.php';</script>";
+        exit();
     }
 
-    // Save new user
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    file_put_contents($userFile, "$username:$hashedPassword\n", FILE_APPEND);
+    // Check if user already exists in the database
+    $stmt = $pdo->prepare("SELECT id FROM public.users WHERE username = :username");
+    $stmt->execute([':username' => $username]);
+    if ($stmt->fetch()) {
+        echo "<script>alert('Username already exists.'); window.location.href='signup.php';</script>";
+        exit();
+    }
 
-    echo "<script>alert('Signup successful. You can now login.'); window.location.href='index.php';</script>";
+    // Save new user in the database
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("INSERT INTO public.users (username, password) VALUES (:username, :password)");
+    $stmt->execute([':username' => $username, ':password' => $hashedPassword]);
+
+    // Mark token as used
+    $stmt = $pdo->prepare("UPDATE public.signup_tokens SET is_used = TRUE WHERE token = :token");
+    $stmt->execute([':token' => $signup_token]);
+
+    echo "<script>alert('Signup successful. You can now login.'); window.location.href='login.php';</script>";
     exit();
 }
 ?>
@@ -38,19 +49,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
 <head>
     <title>Signup</title>
     <style>
-        body {
+        html, body {
             min-height: 100vh;
-            background: linear-gradient(120deg, #e9f8ef 0%, #d7f6e8 100%);
-            font-family: 'Segoe UI', Arial, sans-serif;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: url('pic.jpeg') no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
         }
         .signup-card {
-            background: #fff;
+            background: rgba(255,255,255,0.93);
             padding: 2rem 2rem 1.5rem 2rem;
             border-radius: 18px;
-            box-shadow: 0 8px 32px 0 rgba(44, 113, 88, 0.09);
+            box-shadow: 0 8px 32px 0 rgba(44, 113, 88, 0.13);
             max-width: 350px;
             width: 100%;
             display: flex;
@@ -70,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
             margin-bottom: 0.2rem;
             color: #26845d;
         }
-        .signup-card input[type="text"],
+        .signup-card input[type="text"], 
         .signup-card input[type="password"] {
             width: 100%;
             padding: 0.65rem 0.9rem;
@@ -81,10 +100,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
             font-size: 1rem;
             transition: border 0.2s;
             outline: none;
+            box-sizing: border-box;
         }
         .signup-card input[type="text"]:focus,
         .signup-card input[type="password"]:focus {
             border-color: #60c993;
+        }
+        .password-wrapper {
+            width: 100%;
+            position: relative;
+            margin-bottom: 1.1rem;
+        }
+        .password-wrapper input[type="password"] {
+            padding-right: 2.8rem;
+        }
+        .eye-icon {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            fill: #5ec699;
+            opacity: 0.8;
+            transition: fill 0.18s, opacity 0.18s;
+        }
+        .eye-icon:hover {
+            opacity: 1;
+            fill: #26845d;
         }
         .signup-card button {
             width: 100%;
@@ -201,15 +245,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
         <label>Username:</label>
         <input type="text" name="username" required>
         <label>Password:</label>
-        <input type="password" name="password" required>
+        <div class="password-wrapper">
+            <input type="password" name="password" id="passwordInput" required>
+            <!-- Eye icon SVG -->
+            <svg class="eye-icon" id="togglePassword" viewBox="0 0 24 24">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zm11 5c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm0-10a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+        </div>
+        <!-- Hidden token field to carry token from modal to PHP POST -->
+        <input type="hidden" name="signup_token" id="signupTokenField" required>
         <button type="submit">Signup</button>
     </form>
 
     <script>
-        // Replace this with your actual token!
-        const VALID_TOKEN = "123456"; // Change this value to your desired token
+        // Show/hide password logic
+        const passwordInput = document.getElementById('passwordInput');
+        const togglePassword = document.getElementById('togglePassword');
+        let passwordVisible = false;
 
-        // Show modal immediately on page load (default)
+        togglePassword.addEventListener('click', function () {
+            passwordVisible = !passwordVisible;
+            if (passwordVisible) {
+                passwordInput.type = 'text';
+                togglePassword.style.fill = '#26845d';
+            } else {
+                passwordInput.type = 'password';
+                togglePassword.style.fill = '#5ec699';
+            }
+        });
+
+        // Modal logic
         window.onload = function() {
             document.getElementById('modalOverlay').style.display = 'flex';
             document.getElementById('signupForm').style.filter = 'blur(2px)';
@@ -220,18 +285,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
         function checkToken() {
             const tokenInput = document.getElementById('tokenInput').value.trim();
             const errorDiv = document.getElementById('tokenError');
-            if (tokenInput === VALID_TOKEN) {
-                document.getElementById('modalOverlay').style.display = 'none';
-                document.getElementById('signupForm').style.filter = 'none';
-                document.getElementById('signupForm').style.pointerEvents = 'auto';
-            } else {
-                errorDiv.textContent = "Invalid token. Please try again.";
-                document.getElementById('tokenInput').value = '';
-                document.getElementById('tokenInput').focus();
+            if (tokenInput.length < 3) {
+                errorDiv.textContent = "Please enter a valid token.";
+                return;
             }
+            // Set the hidden field and enable form
+            document.getElementById('signupTokenField').value = tokenInput;
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('signupForm').style.filter = 'none';
+            document.getElementById('signupForm').style.pointerEvents = 'auto';
         }
 
-        // Enter key support for modal input
         document.getElementById('tokenInput').addEventListener('keyup', function(event) {
             if (event.key === "Enter") {
                 checkToken();

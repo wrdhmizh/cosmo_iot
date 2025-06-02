@@ -1,2 +1,5 @@
 admin1:$2y$12$ldRN7LnpSF28mHIfiAAZN.iXqy48wrf3aZacXY4BSJqLsFj9T.IlW
 admin:$2y$12$LxEsT9.gQgHZIhg2NGP3UuA/A3r6Md4Lgj8XwVPf/v2xRbBmnSoIi
+admin0:$2y$12$AuTuO76tP9hSZBGccjK2reUH7zooTOKqt7JPaJ3Ob5IrWmcyWjF4e
+@admin:$2y$12$Nt/ilxYmPHSsGVEDcaUTTu7n.dNU4uU3zSrpKab0SUsblHnLaux1K
+admin123:$2y$12$9BvkKEXzZdKBx9WdXPNjkukgHd/udtwotW8vCVuhaYPE4qsLNGndm
