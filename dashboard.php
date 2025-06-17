@@ -6,7 +6,6 @@ if (!isset($_SESSION['username'])) {
 }
 
 // This is a placeholder for real LED control
-// In a real IoT setup, you might send a command to your microcontroller here
 $ledStatus = $_SESSION['ledStatus'] ?? 'OFF';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,9 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ledStatus = 'OFF';
         }
         $_SESSION['ledStatus'] = $ledStatus;
-
-        // Here, you would actually trigger the hardware or make an API call
-        // Example: file_get_contents("http://your-microcontroller-ip/control?pin=D&state=$ledStatus");
     }
 }
 ?>
@@ -97,6 +93,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: underline;
             color: #a31d1d;
         }
+        .dashboard-card .sensor-link {
+            display: block;
+            margin-top: 1.1rem;
+            background: #228e55;
+            color: #fff;
+            padding: 0.9rem 0;
+            border-radius: 10px;
+            font-size: 1.07rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(44,113,88,0.09);
+            transition: background 0.18s;
+        }
+        .dashboard-card .sensor-link:hover {
+            background: #1d7948;
+        }
     </style>
 </head>
 <body>
@@ -110,6 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" name="action" value="off" <?= $ledStatus === 'OFF' ? 'disabled style="opacity:0.6;"' : '' ?>>Turn OFF</button>
         </form>
         <a class="logout-link" href="logout.php">Logout</a>
+        <!-- Sensor Dashboard button -->
+        <a class="sensor-link" href="sensor_dashboard.php">➔ View Sensor Dashboard</a>
     </div>
 </body>
 </html>
