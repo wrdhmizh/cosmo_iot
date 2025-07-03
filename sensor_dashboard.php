@@ -169,8 +169,8 @@ $sensors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
     <div class="main-content">
-        <h1 class="text-3xl font-bold mb-2">Welcome, Dream Team!</h1>
-        <h2 class="text-xl mb-4">Sensor Data</h2>
+        <h1 class="text-3xl font-bold mb-2 text-white">Welcome, Dream Team!</h1>
+        <h2 class="text-xl mb-4 text-white">Sensor Data</h2>
         
         <!-- Add or Edit Sensor Form -->
         <?php if ($edit_data): ?>
