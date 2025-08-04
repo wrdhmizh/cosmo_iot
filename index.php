@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Home</title>
     <style>
         html, body {
@@ -46,17 +46,21 @@
             font-weight: 600;
             margin-top: 1rem;
             font-size: 1.1rem;
+            transition: color 0.2s ease-in-out;
         }
         .home-card a:hover {
             text-decoration: underline;
+            color: #146b3f;
         }
     </style>
 </head>
 <body>
     <div class="home-card">
         <h1>Welcome to the IoT Dashboard</h1>
-        <a href="login.php">Login</a>
-        <a href="signup.php">Sign Up</a>
+        <a href="login.php">Private Login</a>
+        <a href="public_login.php">Public Login</a>
+        <a href="public_signup.php">Public Sign Up</a>
+        <a href="private_signup.php">Private Sign Up</a>
     </div>
 </body>
 </html>

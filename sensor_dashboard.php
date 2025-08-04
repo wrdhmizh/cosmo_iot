@@ -29,7 +29,7 @@ if (isset($_POST['update_sensor'])) {
     $status = trim($_POST['status'] ?? 'Inactive');
     $image = trim($_POST['image'] ?? '');
 
-    if ($sensor_name && $sensor_type && $sensor_value && $location) {
+    if (is_numeric($sensor_value) && $sensor_name && $sensor_type && $location) {
         $stmt = $pdo->prepare("UPDATE sensors SET sensor_name=:name, sensor_type=:type, sensor_value=:value, status=:status, image=:image, location=:location WHERE id=:id");
         $stmt->execute([
             ':name' => $sensor_name,
@@ -43,8 +43,7 @@ if (isset($_POST['update_sensor'])) {
         header("Location: sensor_dashboard.php");
         exit();
     } else {
-        $edit_error = "Please fill in all required fields for update.";
-        // refill $edit_data
+        $edit_error = "Please enter valid numeric value and fill all required fields.";
         $edit_data = [
             'id' => $id,
             'sensor_name' => $sensor_name,
@@ -66,7 +65,7 @@ if (isset($_POST['add_sensor'])) {
     $status = trim($_POST['status'] ?? 'Inactive');
     $image = trim($_POST['image'] ?? '');
 
-    if ($sensor_name && $sensor_type && $sensor_value && $location) {
+    if (is_numeric($sensor_value) && $sensor_name && $sensor_type && $location) {
         $stmt = $pdo->prepare("INSERT INTO sensors (sensor_name, sensor_type, sensor_value, status, image, location) VALUES (:name, :type, :value, :status, :image, :location)");
         $stmt->execute([
             ':name' => $sensor_name,
@@ -79,7 +78,7 @@ if (isset($_POST['add_sensor'])) {
         header("Location: sensor_dashboard.php");
         exit();
     } else {
-        $add_error = "Please fill in all required fields.";
+        $add_error = "Please enter valid numeric value and fill all required fields.";
     }
 }
 
@@ -191,7 +190,7 @@ $sensors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                     <label class="block text-sm">Value</label>
-                    <input type="text" name="sensor_value" required class="px-2 py-1 border rounded" value="<?= htmlspecialchars($edit_data['sensor_value']) ?>">
+                    <input type="number" name="sensor_value" step="any" required class="px-2 py-1 border rounded" value="<?= htmlspecialchars($edit_data['sensor_value']) ?>">
                 </div>
                 <div>
                     <label class="block text-sm">Location</label>
@@ -227,7 +226,7 @@ $sensors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                     <label class="block text-sm">Value</label>
-                    <input type="text" name="sensor_value" required class="px-2 py-1 border rounded">
+                    <input type="number" name="sensor_value" step="any" required class="px-2 py-1 border rounded">
                 </div>
                 <div>
                     <label class="block text-sm">Location</label>
