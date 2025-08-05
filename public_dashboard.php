@@ -220,16 +220,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
 <div class="container">
   <nav class="menu" role="navigation" aria-label="Main menu">
-    <button type="button" class="active" data-section="overview">Dashboard Overview</button>
     <button type="button" data-section="feedback">Submit Feedback</button>
     <button type="button" data-section="locations">Smart Bin Locations</button>
     <button type="button" data-section="settings">Personal Settings</button>
   </nav>
 
-  <section id="overview" class="section active" aria-label="Dashboard Overview">
-    <h2>Dashboard Overview</h2>
-    <p>Welcome to your public dashboard. From here, you can send feedback, view smart bin locations, and manage your personal settings.</p>
-  </section>
+ 
 
   <section id="feedback" class="section" aria-label="Submit Feedback">
     <h2>Submit Feedback</h2>
